@@ -211,6 +211,8 @@
 			#include "AVR8/XPLAINED_MINI/LEDs.h"
 		#elif (BOARD == BOARD_REDSCARFIII)
 			#include "AVR8/REDSCARFIII/LEDs.h"
+		#elif (BOARD == BOARD_GH60)
+			#include "AVR8/GH60/LEDs.h"
 		#else
 			#include "Board/LEDs.h"
 		#endif

@@ -246,6 +246,9 @@
 			/** Selects the Red Scarf III specific board drivers, including the Button and LEDs drivers. */
 			#define BOARD_REDSCARFIII          60
 
+			/** Selects the GH60 specific board drivers, including the Button and LEDs drivers. */
+			#define BOARD_GH60                 61
+
 			#if !defined(__DOXYGEN__)
 				#define BOARD_                 BOARD_NONE
 

@@ -161,6 +161,8 @@
 			#include "AVR8/U2S/Buttons.h"
 		#elif (BOARD == BOARD_REDSCARFIII)
 			#include "AVR8/REDSCARFIII/Buttons.h"
+		#elif (BOARD == BOARD_GH60)
+			#include "AVR8/GH60/Buttons.h"
 		#else
 			#include "Board/Buttons.h"
 		#endif

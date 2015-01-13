@@ -161,6 +161,8 @@
 			#include "AVR8/XPLAINED_MINI/Board.h"
 		#elif (BOARD == BOARD_REDSCARFIII)
 			#include "AVR8/REDSCARFIII/Board.h"
+		#elif (BOARD == BOARD_GH60)
+			#include "AVR8/GH60/Board.h"
 		#else
 			#include "Board/Board.h"
 		#endif
