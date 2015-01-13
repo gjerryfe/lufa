@@ -159,6 +159,8 @@
 			#include "XMEGA/C3_XPLAINED/Buttons.h"
 		#elif (BOARD == BOARD_U2S)
 			#include "AVR8/U2S/Buttons.h"
+		#elif (BOARD == BOARD_REDSCARFIII)
+			#include "AVR8/REDSCARFIII/Buttons.h"
 		#else
 			#include "Board/Buttons.h"
 		#endif

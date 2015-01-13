@@ -209,6 +209,8 @@
 			#include "AVR8/MICRO/LEDs.h"
 		#elif (BOARD == BOARD_XPLAINED_MINI)
 			#include "AVR8/XPLAINED_MINI/LEDs.h"
+		#elif (BOARD == BOARD_REDSCARFIII)
+			#include "AVR8/REDSCARFIII/LEDs.h"
 		#else
 			#include "Board/LEDs.h"
 		#endif

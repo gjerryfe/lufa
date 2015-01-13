@@ -243,6 +243,9 @@
 			/** Selects the Atmel Xplained-MINI specific board drivers, including the driver for the board LEDs. */
 			#define BOARD_XPLAINED_MINI        59
 
+			/** Selects the Red Scarf III specific board drivers, including the Button and LEDs drivers. */
+			#define BOARD_REDSCARFIII          60
+
 			#if !defined(__DOXYGEN__)
 				#define BOARD_                 BOARD_NONE
 
