@@ -131,6 +131,15 @@ void Application_Jump_Check(void)
 
 		/* Re-enable JTAG debugging */
 		JTAG_ENABLE();
+	#elif (BOARD == BOARD_REDSCARFIII)
+		/* Init buttons */
+		Buttons_Init();
+
+		/* If BUTTON1 is not pressed, start the user application instead */
+		JumpToApplication = ((Buttons_GetStatus() & BUTTONS_BUTTON1) != 0);
+
+		/* Disable buttons */
+		Buttons_Disable();
 	#else
 		/* Check if the device's BOOTRST fuse is set */
 		if (boot_lock_fuse_bits_get(GET_HIGH_FUSE_BITS) & FUSE_BOOTRST)
