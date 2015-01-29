@@ -84,8 +84,10 @@ struct
 	uint8_t  RecordType;
 	/** Numerical bytes of data remaining to be read in the current record. */
 	uint8_t  DataRem;
+#ifndef NO_VERIFY_CHECKSUM
 	/** Checksum of the current record received so far. */
 	uint8_t  Checksum;
+#endif
 	/** Starting address of the last addressed FLASH page. */
 	uint32_t PageStartAddress;
 	/** Current 32-bit byte extended base address in FLASH being targeted. */
@@ -111,6 +113,13 @@ static bool RunBootloader = true;
  *  \ref MAGIC_BOOT_KEY the special init function \ref Application_Jump_Check() will force the application to start.
  */
 uint16_t MagicBootKey ATTR_NO_INIT;
+
+
+static uint8_t WriteToFLASH = true;
+
+#if (LEDS_LED2 != 0)
+static uint8_t LEDMask = LEDS_LED1;
+#endif
 
 
 /** Special startup routine to check if the bootloader was started via a watchdog reset, and if the magic application
@@ -168,7 +177,11 @@ void Application_Jump_Check(void)
 	#endif
 
 	/* Don't run the user application if the reset vector is blank (no app loaded) */
+#ifndef NO_APPLICATION_VALID_CHECK
 	bool ApplicationValid = (pgm_read_word_near(0) != 0xFFFF);
+#else
+	bool ApplicationValid = true;
+#endif
 
 	/* If a request has been made to jump to the user application, honor it */
 	if (JumpToApplication && ApplicationValid)
@@ -177,8 +190,10 @@ void Application_Jump_Check(void)
 		MCUSR &= ~(1 << WDRF);
 		wdt_disable();
 
+#ifndef NO_MAGIC_BOOT_KEY
 		/* Clear the boot key and jump to the user application */
 		MagicBootKey = 0;
+#endif
 
 		// cppcheck-suppress constStatement
 		((void (*)(void))0x0000)();
@@ -241,7 +256,9 @@ static void ParseIntelHEXByte(const char ReadCharacter)
 	/* Reset the line parser while waiting for a new line to start */
 	if ((HEXParser.ParserState == HEX_PARSE_STATE_WAIT_LINE) || (ReadCharacter == ':'))
 	{
+#ifndef NO_VERIFY_CHECKSUM
 		HEXParser.Checksum     = 0;
+#endif
 		HEXParser.CurrAddress  = HEXParser.CurrBaseAddress;
 		HEXParser.ReadMSB      = false;
 
@@ -268,8 +285,10 @@ static void ParseIntelHEXByte(const char ReadCharacter)
 	/* Intel HEX checksum is for all fields except starting character and the
 	 * checksum itself
 	 */
+#ifndef NO_VERIFY_CHECKSUM
 	if (HEXParser.ParserState != HEX_PARSE_STATE_CHECKSUM)
 	  HEXParser.Checksum += HEXParser.Data;
+#endif
 
 	switch (HEXParser.ParserState)
 	{
@@ -318,21 +337,27 @@ static void ParseIntelHEXByte(const char ReadCharacter)
 			switch (HEXParser.RecordType)
 			{
 				case HEX_RECORD_TYPE_Data:
-					/* If we are writing to a new page, we need to erase it first */
-					if (!(PageDirty))
-					{
-						boot_page_erase(HEXParser.PageStartAddress);
-						boot_spm_busy_wait();
+					if (WriteToFLASH) {
+						/* If we are writing to a new page, we need to erase it first */
+						if (!(PageDirty))
+						{
+							boot_page_erase(HEXParser.PageStartAddress);
+							boot_spm_busy_wait();
 
-						PageDirty = true;
+							PageDirty = true;
+						}
+
+						/* Fill the FLASH memory buffer with the new word of data */
+						boot_page_fill(HEXParser.CurrAddress, NewDataWord);
+						HEXParser.CurrAddress += 2;
+
+						/* Flush the FLASH page to physical memory if we are crossing a page boundary */
+						FlushPageIfRequired();
 					}
-
-					/* Fill the FLASH memory buffer with the new word of data */
-					boot_page_fill(HEXParser.CurrAddress, NewDataWord);
-					HEXParser.CurrAddress += 2;
-
-					/* Flush the FLASH page to physical memory if we are crossing a page boundary */
-					FlushPageIfRequired();
+					else {
+						eeprom_write_word((uint16_t *)HEXParser.CurrAddress, NewDataWord);
+						HEXParser.CurrAddress += 2;
+					}
 					break;
 
 				case HEX_RECORD_TYPE_ExtendedSegmentAddress:
@@ -352,8 +377,10 @@ static void ParseIntelHEXByte(const char ReadCharacter)
 
 		case HEX_PARSE_STATE_CHECKSUM:
 			/* Verify checksum of the completed record */
+#ifndef NO_VERIFY_CHECKSUM
 			if (HEXParser.Data != ((~HEXParser.Checksum + 1) & 0xFF))
 			  break;
+#endif
 
 			/* Flush the FLASH page to physical memory if we are crossing a page boundary */
 			FlushPageIfRequired();
@@ -375,9 +402,26 @@ static void ParseIntelHEXByte(const char ReadCharacter)
  */
 int main(void)
 {
+	#if (BUTTONS_BUTTON2 != 0)
+		Buttons_Init();
+		WriteToFLASH = ((Buttons_GetStatus() & BUTTONS_BUTTON2) == 0);
+	#elif (BUTTONS_BUTTON1 != 0)
+		Buttons_Init();
+		WriteToFLASH = ((Buttons_GetStatus() & BUTTONS_BUTTON1) == 0);
+	#else
+		WriteToFLASH = true;
+	#endif
+
+	#if (LEDS_LED2 != 0)
+		if (WriteToFLASH)
+		  LEDMask |= LEDS_LED2;
+	#endif
+
 	SetupHardware();
 
+#ifndef NO_USB_LEDS
 	LEDs_SetAllLEDs(LEDMASK_USB_NOTREADY);
+#endif
 	GlobalInterruptEnable();
 
 	while (RunBootloader)
@@ -386,31 +430,52 @@ int main(void)
 
 		if (BytesReceived)
 		{
+			TIMSK1 = 0;
+#ifndef NO_USB_LEDS
 			LEDs_SetAllLEDs(LEDMASK_USB_BUSY);
+#endif
 
 			while (BytesReceived--)
 			{
 				int16_t ReceivedByte = PRNT_Device_ReceiveByte(&TextOnly_Printer_Interface);
 
+				if (ReceivedByte & 1) {
+					LEDs_TurnOnLEDs(LEDS_ALL_LEDS);
+				}
+				else {
+					LEDs_TurnOffLEDs(LEDS_ALL_LEDS);
+				}
+
+
 				/* Feed the next byte of data to the HEX parser */
 				ParseIntelHEXByte(ReceivedByte);
 			}
 
+#ifndef NO_USB_LEDS
 			LEDs_SetAllLEDs(LEDMASK_USB_READY);
+#endif
 		}
 
 		PRNT_Device_USBTask(&TextOnly_Printer_Interface);
 		USB_USBTask();
 	}
 
+	LEDs_TurnOnLEDs(LEDS_ALL_LEDS);
+
+#ifndef NO_USB_DETACH
 	/* Disconnect from the host - USB interface will be reset later along with the AVR */
 	USB_Detach();
+#endif
 
+#ifndef NO_MAGIC_BOOT_KEY
 	/* Unlock the forced application start mode of the bootloader if it is restarted */
 	MagicBootKey = MAGIC_BOOT_KEY;
+#endif
 
+#ifndef NO_WATCHDOG_RESET
 	/* Enable the watchdog and force a timeout to reset the AVR */
 	wdt_enable(WDTO_250MS);
+#endif
 
 	for (;;);
 }
@@ -435,22 +500,38 @@ static void SetupHardware(void)
 
 	/* Bootloader active LED toggle timer initialization */
 	TIMSK1 = (1 << TOIE1);
-	TCCR1B = ((1 << CS11) | (1 << CS10));
+	#if (LEDS_LED2 != 0)
+		TCCR1B = ((1 << CS11) | (1 << CS10));
+	#elif (LEDS_LED1 != 0)
+		if (WriteToFLASH) {
+			TCCR1B = ((1 << CS11) | (1 << CS10));
+		}
+		else {
+			TCCR1B = (1 << CS12);
+		}
+	#endif
 }
 
 /** ISR to periodically toggle the LEDs on the board to indicate that the bootloader is active. */
 ISR(TIMER1_OVF_vect, ISR_BLOCK)
 {
-	LEDs_ToggleLEDs(LEDS_LED1 | LEDS_LED2);
+	#if (LEDS_LED2 != 0)
+		LEDs_ToggleLEDs(LEDMask);
+	#elif (LEDS_LED1 != 0)
+		LEDs_ToggleLEDs(LEDS_LED1);
+	#endif
 }
 
+#ifndef NO_USB_LEDS
 /** Event handler for the USB_Connect event. This indicates that the device is enumerating via the status LEDs. */
 void EVENT_USB_Device_Connect(void)
 {
 	/* Indicate USB enumerating */
 	LEDs_SetAllLEDs(LEDMASK_USB_ENUMERATING);
 }
+#endif
 
+#ifndef NO_USB_LEDS
 /** Event handler for the USB_Disconnect event. This indicates that the device is no longer connected to a host via
  *  the status LEDs and stops the Printer management task.
  */
@@ -459,6 +540,7 @@ void EVENT_USB_Device_Disconnect(void)
 	/* Indicate USB not ready */
 	LEDs_SetAllLEDs(LEDMASK_USB_NOTREADY);
 }
+#endif
 
 /** Event handler for the USB_ConfigurationChanged event. This is fired when the host set the current configuration
  *  of the USB device after enumeration - the device endpoints are configured and the Mass Storage management task started.
@@ -474,7 +556,9 @@ void EVENT_USB_Device_ConfigurationChanged(void)
 	HEXParser.ParserState = HEX_PARSE_STATE_WAIT_LINE;
 
 	/* Indicate endpoint configuration success or failure */
+#ifndef NO_USB_LEDS
 	LEDs_SetAllLEDs(ConfigSuccess ? LEDMASK_USB_READY : LEDMASK_USB_ERROR);
+#endif
 }
 
 /** Event handler for the USB_ControlRequest event. This is used to catch and process control requests sent to
