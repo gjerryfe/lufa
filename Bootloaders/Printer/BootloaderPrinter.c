@@ -153,6 +153,12 @@ void Application_Jump_Check(void)
 
 		/* Re-enable JTAG debugging */
 		JTAG_ENABLE();
+	#elif (BOARD == BOARD_REDSCARFIII)
+		/* Init buttons */
+		Buttons_Init();
+
+		/* If BUTTON1 is not pressed, start the user application instead */
+		JumpToApplication = ((Buttons_GetStatus() & BUTTONS_BUTTON1) != 0);
 	#else
 		/* Check if the device's BOOTRST fuse is set */
 		if (boot_lock_fuse_bits_get(GET_HIGH_FUSE_BITS) & FUSE_BOOTRST)
@@ -403,7 +409,10 @@ static void ParseIntelHEXByte(const char ReadCharacter)
 int main(void)
 {
 	#if (BUTTONS_BUTTON2 != 0)
-		Buttons_Init();
+		#if (BOARD == BOARD_REDSCARFIII)
+		#else
+			Buttons_Init();
+		#endif
 		WriteToFLASH = ((Buttons_GetStatus() & BUTTONS_BUTTON2) == 0);
 	#elif (BUTTONS_BUTTON1 != 0)
 		Buttons_Init();

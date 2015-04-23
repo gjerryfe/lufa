@@ -105,5 +105,10 @@
 		void EVENT_USB_Device_ConfigurationChanged(void);
 		void EVENT_USB_Device_ControlRequest(void);
 
+
+		#ifdef APPLICATION_JUMP_CHECK_ENABLE
+			void Application_Jump_Check(void) ATTR_INIT_SECTION(3);
+		#endif
+
 #endif
 
