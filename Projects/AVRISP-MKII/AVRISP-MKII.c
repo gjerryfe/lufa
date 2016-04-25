@@ -1,13 +1,13 @@
 /*
              LUFA Library
-     Copyright (C) Dean Camera, 2014.
+     Copyright (C) Dean Camera, 2016.
 
   dean [at] fourwalledcubicle [dot] com
            www.lufa-lib.org
 */
 
 /*
-  Copyright 2014  Dean Camera (dean [at] fourwalledcubicle [dot] com)
+  Copyright 2016  Dean Camera (dean [at] fourwalledcubicle [dot] com)
 
   Permission to use, copy, modify, distribute, and sell this
   software and its documentation for any purpose is hereby granted
@@ -35,6 +35,16 @@
  */
 
 #include "AVRISP-MKII.h"
+
+#if (BOARD != BOARD_NONE)
+  /* Some board hardware definitions (e.g. the Arduino Micro) have their LEDs defined on the same pins
+     as the ISP, PDI or TPI interfaces (see the accompanying project documentation). If a board other
+     than NONE is selected (to enable the LED driver with the programmer) you should double-check that
+     no conflicts will occur. If there is a conflict, turn off the LEDs (set BOARD to NONE in the makefile)
+     or define a custom board driver (see the LUFA manual) with alternative LED mappings.
+  */
+  #warning Board specific drivers have been selected; make sure the board LED driver does not conflict with the programmer ISP/PDI/TPI interfaces.
+#endif
 
 /** Main program entry point. This routine contains the overall program flow, including initial
  *  setup of all components and the main program loop.
@@ -142,15 +152,13 @@ void AVRISP_Task(void)
  *  \param[in]  wValue                 Descriptor type and index to retrieve
  *  \param[in]  wIndex                 Sub-index to retrieve (such as a localized string language)
  *  \param[out] DescriptorAddress      Address of the retrieved descriptor
- *  \param[out] DescriptorMemorySpace  Memory space that the descriptor is stored in
  *
  *  \return Length of the retrieved descriptor in bytes, or NO_DESCRIPTOR if the descriptor was not found
  */
 uint16_t CALLBACK_USB_GetDescriptor(const uint16_t wValue,
-                                    const uint8_t wIndex,
-                                    const void** const DescriptorAddress,
-                                    uint8_t* DescriptorMemorySpace)
+                                    const uint16_t wIndex,
+                                    const void** const DescriptorAddress)
 {
-	return AVRISP_GetDescriptor(wValue, wIndex, DescriptorAddress, DescriptorMemorySpace);
+	return AVRISP_GetDescriptor(wValue, wIndex, DescriptorAddress);
 }
 

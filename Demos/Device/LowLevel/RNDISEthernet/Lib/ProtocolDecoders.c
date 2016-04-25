@@ -1,13 +1,13 @@
 /*
              LUFA Library
-     Copyright (C) Dean Camera, 2014.
+     Copyright (C) Dean Camera, 2016.
 
   dean [at] fourwalledcubicle [dot] com
            www.lufa-lib.org
 */
 
 /*
-  Copyright 2014  Dean Camera (dean [at] fourwalledcubicle [dot] com)
+  Copyright 2016  Dean Camera (dean [at] fourwalledcubicle [dot] com)
 
   Permission to use, copy, modify, distribute, and sell this
   software and its documentation for any purpose is hereby granted
@@ -244,7 +244,7 @@ void DecodeUDPHeader(void* InDataStart)
 void DecodeDHCPHeader(void* InDataStart)
 {
 	#if !defined(NO_DECODE_DHCP)
-	uint8_t* DHCPOptions = (InDataStart + sizeof(DHCP_Header_t));
+	uint8_t* DHCPOptions = ((uint8_t*)InDataStart + sizeof(DHCP_Header_t));
 
 	printf_P(PSTR("     \\\r\n      DHCP\r\n"));
 

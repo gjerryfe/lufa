@@ -1,13 +1,13 @@
 /*
              LUFA Library
-     Copyright (C) Dean Camera, 2014.
+     Copyright (C) Dean Camera, 2016.
 
   dean [at] fourwalledcubicle [dot] com
            www.lufa-lib.org
 */
 
 /*
-  Copyright 2014  Dean Camera (dean [at] fourwalledcubicle [dot] com)
+  Copyright 2016  Dean Camera (dean [at] fourwalledcubicle [dot] com)
 
   Permission to use, copy, modify, distribute, and sell this
   software and its documentation for any purpose is hereby granted
@@ -37,7 +37,7 @@
  */
 
 /** \ingroup Group_LEDs
- *  \defgroup Group_LEDs_XPLAINED XPLAINED_MINI
+ *  \defgroup Group_LEDs_XPLAINED_MINI XPLAINED_MINI
  *  \brief Board specific LED driver header for the Atmel Xplained-MINI series kits.
  *
  *  Board specific LED driver header for the Atmel Xplained-MINI series kits.

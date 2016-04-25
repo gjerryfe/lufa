@@ -1,13 +1,13 @@
 /*
              LUFA Library
-     Copyright (C) Dean Camera, 2014.
+     Copyright (C) Dean Camera, 2016.
 
   dean [at] fourwalledcubicle [dot] com
            www.lufa-lib.org
 */
 
 /*
-  Copyright 2014  Dean Camera (dean [at] fourwalledcubicle [dot] com)
+  Copyright 2016  Dean Camera (dean [at] fourwalledcubicle [dot] com)
 
   Permission to use, copy, modify, distribute, and sell this
   software and its documentation for any purpose is hereby granted
@@ -156,6 +156,9 @@ int main(void)
 		CDC_Task();
 		USB_USBTask();
 	}
+
+	/* Wait a short time to end all USB transactions and then disconnect */
+	_delay_us(1000);
 
 	/* Disconnect from the host - USB interface will be reset later along with the AVR */
 	USB_Detach();
@@ -357,7 +360,7 @@ static void ReadWriteMemoryBlock(const uint8_t Command)
 			else
 			{
 				/* Write the next EEPROM byte from the endpoint */
-				eeprom_write_byte((uint8_t*)((intptr_t)(CurrAddress >> 1)), FetchNextCommandByte());
+				eeprom_update_byte((uint8_t*)((intptr_t)(CurrAddress >> 1)), FetchNextCommandByte());
 
 				/* Increment the address counter after use */
 				CurrAddress += 2;
@@ -611,7 +614,7 @@ static void CDC_Task(void)
 	else if (Command == AVR109_COMMAND_WriteEEPROM)
 	{
 		/* Read the byte from the endpoint and write it to the EEPROM */
-		eeprom_write_byte((uint8_t*)((intptr_t)(CurrAddress >> 1)), FetchNextCommandByte());
+		eeprom_update_byte((uint8_t*)((intptr_t)(CurrAddress >> 1)), FetchNextCommandByte());
 
 		/* Increment the address after use */
 		CurrAddress += 2;
@@ -668,4 +671,3 @@ static void CDC_Task(void)
 	/* Acknowledge the command from the host */
 	Endpoint_ClearOUT();
 }
-

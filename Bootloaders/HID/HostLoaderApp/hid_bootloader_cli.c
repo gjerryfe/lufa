@@ -921,21 +921,22 @@ void ihex_get_data(int addr, int len, unsigned char *bytes)
 int printf_verbose(const char *format, ...)
 {
 	va_list ap;
-	int r;
+	int r = 0;
 
 	va_start(ap, format);
 	if (verbose) {
 		r = vprintf(format, ap);
 		fflush(stdout);
-		return r;
 	}
-	return 0;
+	va_end(ap);
+
+	return r;
 }
 
 void delay(double seconds)
 {
-	#ifdef WIN32
-	Sleep(seconds * 1000.0);
+	#ifdef USE_WIN32
+	sleep(seconds * 1000.0);
 	#else
 	usleep(seconds * 1000000.0);
 	#endif
@@ -948,10 +949,12 @@ void die(const char *str, ...)
 	va_start(ap, str);
 	vfprintf(stderr, str, ap);
 	fprintf(stderr, "\n");
+	va_end(ap);
+
 	exit(1);
 }
 
-#if defined(WIN32)
+#if defined USE_WIN32
 #define strcasecmp stricmp
 #endif
 
